@@ -1,0 +1,12 @@
+# Sets a login banner. Safe to run anywhere; shows a change only the first time.
+- name: Login banner
+  hosts: all
+  become: true
+  vars:
+    banner_text: "Authorized use only. Activity is logged."
+  tasks:
+    - name: Write /etc/motd
+      ansible.builtin.copy:
+        dest: /etc/motd
+        content: "{{ banner_text }}\n"
+        mode: "0644"

@@ -1,0 +1,25 @@
+# A stand-in for an application deploy: writes the release and colour to a file,
+# so you can see survey answers and extra variables arrive on the machine.
+- name: Deploy web release
+  hosts: all
+  become: true
+  vars:
+    release: "1.0"
+    color: green
+  tasks:
+    - name: Release folder
+      ansible.builtin.file:
+        path: /opt/sample-web
+        state: directory
+        mode: "0755"
+      tags: [deploy]
+    - name: Release file
+      ansible.builtin.copy:
+        dest: /opt/sample-web/RELEASE
+        content: "release={{ release }} color={{ color }}\n"
+        mode: "0644"
+      tags: [deploy]
+    - name: Slow warm-up step (skipped by the job template's skip tags)
+      ansible.builtin.command: sleep 30
+      changed_when: false
+      tags: [slow]

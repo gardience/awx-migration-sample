@@ -1,0 +1,43 @@
+{
+  "projects": [
+    {"name": "Sample Playbooks", "scm_type": "git", "scm_url": "https://github.com/gardience/awx-migration-sample.git",
+     "scm_branch": "main", "scm_update_on_launch": true, "allow_override": true}
+  ],
+  "inventory": [
+    {"name": "Production", "related": {
+      "hosts": [{"name": "web-01.example.com"}, {"name": "web-02.example.com"}, {"name": "db-01.example.com"}],
+      "groups": [
+        {"name": "webservers", "related": {"hosts": [{"name": "web-01"}, {"name": "web-02"}]}},
+        {"name": "databases", "related": {"hosts": [{"name": "db-01"}]}}
+      ]}}
+  ],
+  "job_templates": [
+    {"name": "Deploy web", "job_type": "run", "playbook": "playbooks/deploy-web.yml", "limit": "web-*",
+     "job_tags": "deploy", "skip_tags": "slow", "extra_vars": "---\nrelease: \"4.2\"\n", "survey_enabled": true,
+     "project": {"name": "Sample Playbooks", "type": "project"},
+     "inventory": {"name": "Production", "type": "inventory"},
+     "credentials": [{"name": "root ssh", "credential_type": {"name": "Machine"}}],
+     "related": {
+       "survey_spec": {"spec": [
+         {"question_name": "Colour", "variable": "color", "type": "multiplechoice", "choices": "blue\ngreen", "default": "green", "required": true}
+       ]},
+       "schedules": [
+         {"name": "Patch Tuesday deploy", "rrule": "DTSTART;TZID=America/Chicago:20260113T220000 RRULE:FREQ=MONTHLY;BYDAY=2TU", "enabled": true}
+       ]}},
+    {"name": "Login banner", "job_type": "run", "playbook": "playbooks/motd.yml",
+     "project": {"name": "Sample Playbooks", "type": "project"},
+     "inventory": {"name": "Production", "type": "inventory"}},
+    {"name": "Disk report", "job_type": "check", "playbook": "playbooks/disk-report.yml",
+     "project": {"name": "Sample Playbooks", "type": "project"},
+     "inventory": {"name": "Production", "type": "inventory"},
+     "survey_enabled": true,
+     "related": {
+       "survey_spec": {"spec": [
+         {"question_name": "Warn above (percent)", "variable": "max_percent", "type": "integer", "default": 90}
+       ]},
+       "schedules": [
+         {"name": "Nightly disk report", "rrule": "DTSTART;TZID=UTC:20260101T060000 RRULE:FREQ=DAILY;INTERVAL=1", "enabled": true}
+       ]}}
+  ],
+  "workflow_job_templates": [{"name": "Release train"}]
+}

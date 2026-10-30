@@ -1,0 +1,15 @@
+# Read-only: reports root file system use and fails above a threshold.
+- name: Disk report
+  hosts: all
+  gather_facts: true
+  vars:
+    max_percent: 90
+  tasks:
+    - name: Root file system use
+      vars:
+        root: "{{ ansible_mounts | selectattr('mount', 'equalto', '/') | first }}"
+        used: "{{ (100 * (1 - root.size_available / root.size_total)) | round(1) }}"
+      ansible.builtin.assert:
+        that: used | float < max_percent | float
+        success_msg: "/ is {{ used }}% full"
+        fail_msg: "/ is {{ used }}% full, above {{ max_percent }}%"
