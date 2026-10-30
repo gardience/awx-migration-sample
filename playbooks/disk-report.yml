@@ -5,11 +5,20 @@
   vars:
     max_percent: 90
   tasks:
+    - name: Find the root file system
+      ansible.builtin.set_fact:
+        root_fs: "{{ ansible_mounts | selectattr('mount', 'equalto', '/') | first | default({}) }}"
+
     - name: Root file system use
+      when: root_fs.size_total is defined
       vars:
-        root: "{{ ansible_mounts | selectattr('mount', 'equalto', '/') | first }}"
-        used: "{{ (100 * (1 - root.size_available / root.size_total)) | round(1) }}"
+        used: "{{ (100 * (1 - root_fs.size_available / root_fs.size_total)) | round(1) }}"
       ansible.builtin.assert:
         that: used | float < max_percent | float
         success_msg: "/ is {{ used }}% full"
         fail_msg: "/ is {{ used }}% full, above {{ max_percent }}%"
+
+    - name: No root file system reported (containers report none)
+      when: root_fs.size_total is not defined
+      ansible.builtin.debug:
+        msg: "This machine reports no root file system, so there is nothing to check."
